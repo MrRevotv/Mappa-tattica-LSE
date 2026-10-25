@@ -39,7 +39,7 @@
     </div>
 </main>
 
-<div id="app" class="app" hidden>
+<main id="app" class="app" hidden>
 
     <!-- Strumenti: colonna a sinistra su computer e tablet, barra in basso sul telefono -->
     <nav class="binario" aria-label="Strumenti della mappa">
@@ -253,7 +253,7 @@
 
                 <section class="gruppo" aria-labelledby="t-registro" data-ufficiali hidden>
                     <h3 id="t-registro" class="etichetta">Registro</h3>
-                    <ol id="registro" class="registro" aria-live="off"></ol>
+                    <ol id="registro" class="registro" tabindex="0" aria-label="Registro della missione"></ol>
                 </section>
 
                 <section class="gruppo" aria-labelledby="t-aiuto">
@@ -378,7 +378,7 @@
             </div>
         </div>
     </aside>
-</div>
+</main>
 
 <div id="avvisi" class="avvisi" aria-live="polite" aria-atomic="false"></div>
 

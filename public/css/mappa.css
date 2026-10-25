@@ -779,7 +779,8 @@ select option { background: var(--twill-scuro); color: var(--filo); }
 @keyframes entra-basso { from { opacity: 0; transform: translateY(1rem); } }
 
 .gruppo { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 2px dashed var(--twill-chiaro); }
-.vista > .gruppo:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+.vista > .gruppo:first-child,
+body:not(.sola-visione) .vista > .nota-comando:first-child + .gruppo { margin-top: 0; padding-top: 0; border-top: 0; }
 .gruppo > h3.etichetta { margin: 0 0 0.875rem; }
 
 .nota-comando { display: none; }

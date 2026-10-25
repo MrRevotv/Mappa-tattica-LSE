@@ -147,7 +147,8 @@ function collegaEventi(id, marker) {
     marker.on('dragstart', () => {
         compagni = null;
         if (selezione.has(id) && selezione.size > 1) {
-            const qui = marker.getLatLng();
+            // Gli scarti si misurano sulle posizioni salvate: il marker trascinato si è già mosso di qualche pixel.
+            const qui = trovaElemento(id);
             compagni = new Map();
             for (const altro of selezione) {
                 const e = trovaElemento(altro);
