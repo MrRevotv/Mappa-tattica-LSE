@@ -1,0 +1,5 @@
+# Fine riga LF ovunque: il server è Linux.
+* text=auto eol=lf
+*.png binary
+*.webp binary
+*.woff2 binary

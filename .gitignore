@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+!.env.example
+uploads/
+# Le mappe caricate restano fuori da git (pesano e cambiano sul server); l'immagine di avvio sì.
+public/mappe/*
+!public/mappe/avvio.webp

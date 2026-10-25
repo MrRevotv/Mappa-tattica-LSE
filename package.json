@@ -1,0 +1,22 @@
+{
+  "name": "mappa-tattica-lse",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Mappa tattica della LSE: mappa condivisa in tempo reale per coordinare squadre e operazioni.",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "leaflet": "1.9.4",
+    "multer": "^2.1.1",
+    "socket.io": "^4.8.3"
+  }
+}

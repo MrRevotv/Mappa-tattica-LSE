@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="it">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#141312">
+    <meta name="color-scheme" content="dark">
+    <title>Mappa tattica · LSE</title>
+    <link rel="icon" type="image/png" href="img/lse-96.png">
+    <link rel="apple-touch-icon" href="img/lse-192.png">
+    <link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+    <link rel="stylesheet" href="css/mappa.css">
+    <script src="/socket.io/socket.io.js" defer></script>
+    <script src="vendor/leaflet/leaflet.js" defer></script>
+    <script type="module" src="js/app.js"></script>
+</head>
+<body>
+
+<!-- Mentre si apre -->
+<div id="avvio" class="avvio" role="status">
+    <span class="toppa-attesa" aria-hidden="true"><img src="img/lse-96.png" alt=""></span>
+    <p>Apro la mappa tattica…</p>
+</div>
+
+<!-- Ingresso -->
+<main id="ingresso" class="ingresso" hidden>
+    <div class="ingresso-scheda">
+        <img class="ingresso-logo" src="img/lse-192.png" alt="" width="96" height="96">
+        <h1 class="ricamo ingresso-titolo">Mappa tattica</h1>
+        <p class="ingresso-org">Logistic Space Economy</p>
+        <p class="ingresso-testo">La mappa condivisa in tempo reale per coordinare squadre e operazioni.</p>
+        <p id="ingresso-errore" class="ingresso-errore" role="alert" hidden></p>
+        <a id="ingresso-discord" class="targhetta" href="/auth/discord">
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#discord-logo"/></svg>
+            Accedi con Discord
+        </a>
+        <p class="ingresso-nota">Sei nella LSE? La trovi anche sul sito: Area membri → Strumenti.</p>
+    </div>
+</main>
+
+<div id="app" class="app" hidden>
+
+    <!-- Strumenti: colonna a sinistra su computer e tablet, barra in basso sul telefono -->
+    <nav class="binario" aria-label="Strumenti della mappa">
+        <img class="binario-logo" src="img/lse-96.png" alt="LSE" width="40" height="40">
+        <button type="button" class="binario-voce" data-pannello="mappa" aria-controls="pannello" aria-expanded="false">
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#map-trifold"/></svg><span>Mappa</span>
+        </button>
+        <button type="button" class="binario-voce" data-pannello="schiera" aria-controls="pannello" aria-expanded="false">
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#map-pin-plus"/></svg><span>Schiera</span>
+        </button>
+        <button type="button" class="binario-voce" data-pannello="disegna" aria-controls="barra-disegno" aria-expanded="false">
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#pencil-simple"/></svg><span>Disegna</span>
+        </button>
+        <button type="button" class="binario-voce" data-pannello="squadre" aria-controls="pannello" aria-expanded="false">
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#users-three"/></svg><span>Squadre</span>
+        </button>
+        <button type="button" class="binario-voce" data-pannello="bounty" aria-controls="pannello" aria-expanded="false">
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#coins"/></svg><span>Bounty</span>
+        </button>
+        <button type="button" class="binario-voce" data-pannello="missione" aria-controls="pannello" aria-expanded="false">
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#flag-banner"/></svg><span>Missione</span>
+            <span class="binario-segnale" id="segnale-richieste" hidden></span>
+        </button>
+    </nav>
+
+    <!-- Il pannello aperto (uno alla volta) -->
+    <section id="pannello" class="pannello" hidden aria-labelledby="pannello-titolo" tabindex="-1">
+        <header class="pannello-testa">
+            <h2 id="pannello-titolo" class="ricamo"></h2>
+            <button type="button" class="pulsante-icona" data-chiudi-pannello aria-label="Chiudi il pannello">
+                <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#x"/></svg>
+            </button>
+        </header>
+
+        <div class="pannello-corpo">
+
+            <!-- MAPPA -->
+            <div class="vista" data-vista="mappa" data-titolo="Mappa" hidden>
+                <p class="nota-comando">Solo chi ha il comando cambia la mappa per tutti.</p>
+
+                <div class="campo cerca">
+                    <label for="cerca-mappa">Cerca una mappa</label>
+                    <div class="cerca-casella">
+                        <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#magnifying-glass"/></svg>
+                        <input id="cerca-mappa" type="search" autocomplete="off" placeholder="Es. Bueno Ravine" data-comando
+                               role="combobox" aria-expanded="false" aria-controls="risultati-mappa" aria-autocomplete="list">
+                    </div>
+                    <ul id="risultati-mappa" class="risultati" role="listbox" aria-label="Mappe trovate" hidden></ul>
+                </div>
+
+                <section class="gruppo" aria-labelledby="t-zona">
+                    <h3 id="t-zona" class="etichetta">Zona operativa</h3>
+                    <div class="campo"><label for="zona-gioco">Gioco</label>
+                        <select id="zona-gioco" data-comando></select></div>
+                    <div class="campo" hidden><label for="zona-sistema">Sistema</label>
+                        <select id="zona-sistema" data-comando></select></div>
+                    <div class="campo" hidden><label for="zona-pianeta">Pianeta</label>
+                        <select id="zona-pianeta" data-comando></select></div>
+                    <div class="campo" hidden><label for="zona-luogo">Mappa</label>
+                        <select id="zona-luogo" data-comando></select></div>
+                    <div class="campo" hidden><label for="zona-sotto">Sottomappa</label>
+                        <select id="zona-sotto" data-comando></select></div>
+                    <p class="mappa-attuale"><span class="etichetta">Sullo schermo</span> <span id="mappa-attuale">Schermata iniziale</span></p>
+                </section>
+
+                <section class="gruppo" aria-labelledby="t-gestisci" data-ufficiali hidden>
+                    <h3 id="t-gestisci" class="etichetta">Gestisci le mappe</h3>
+                    <div class="azioni-colonna">
+                        <button type="button" class="pulsante" id="carica-master">
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#upload-simple"/></svg>Carica una mappa nuova
+                        </button>
+                        <p class="aiuto" id="aiuto-master"></p>
+                        <button type="button" class="pulsante" id="carica-sotto">
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#upload-simple"/></svg>Aggiungi una sottomappa
+                        </button>
+                        <p class="aiuto" id="aiuto-sotto"></p>
+                        <button type="button" class="pulsante pericolo" id="elimina-mappa">
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#trash"/></svg><span>Elimina la mappa sullo schermo</span>
+                        </button>
+                    </div>
+                    <input type="file" id="file-master" accept="image/png,image/jpeg,image/webp" hidden>
+                    <input type="file" id="file-sotto" accept="image/png,image/jpeg,image/webp" hidden>
+                </section>
+
+                <section class="gruppo" aria-labelledby="t-vista">
+                    <h3 id="t-vista" class="etichetta">Vista</h3>
+                    <label class="spunta"><input type="checkbox" id="vista-griglia" data-comando><span>Griglia tattica <small>(per tutti)</small></span></label>
+                    <label class="spunta"><input type="checkbox" id="vista-notte"><span>Visione notturna <small>(solo per te)</small></span></label>
+                    <label class="spunta"><input type="checkbox" id="vista-goniometro"><span>Goniometro <small>(solo per te)</small></span></label>
+                </section>
+            </div>
+
+            <!-- SCHIERA -->
+            <div class="vista" data-vista="schiera" data-titolo="Schiera" hidden>
+                <p class="nota-comando">Serve il comando per schierare unità e marker.</p>
+                <p class="aiuto">Tocca un'icona: compare al centro della mappa, poi trascinala dove serve.</p>
+                <div class="campo">
+                    <span class="etichetta" id="t-fazione-schiera">Fazione</span>
+                    <div class="segmenti" role="radiogroup" aria-labelledby="t-fazione-schiera" id="schiera-fazione">
+                        <button type="button" role="radio" aria-checked="true" data-fazione="amica">Amica</button>
+                        <button type="button" role="radio" aria-checked="false" data-fazione="nemica">Nemica</button>
+                    </div>
+                </div>
+                <div id="tavolozza"></div>
+            </div>
+
+            <!-- SQUADRE -->
+            <div class="vista" data-vista="squadre" data-titolo="Squadre" hidden>
+                <p class="nota-comando">Solo visione: chiedi il comando per modificare le squadre.</p>
+                <section class="gruppo" aria-labelledby="t-campo">
+                    <h3 id="t-campo" class="etichetta">Sul campo <span id="conta-campo" class="conta"></span></h3>
+                    <div id="squadre-campo" class="lista-squadre"></div>
+                </section>
+                <section class="gruppo" aria-labelledby="t-orbita">
+                    <h3 id="t-orbita" class="etichetta">In orbita / attesa <span id="conta-orbita" class="conta"></span></h3>
+                    <div id="squadre-orbita" class="lista-squadre"></div>
+                </section>
+            </div>
+
+            <!-- BOUNTY -->
+            <div class="vista vista-larga" data-vista="bounty" data-titolo="Bounty e salvage" hidden>
+                <p class="nota-comando">Solo visione: chiedi il comando per modificare i conti.</p>
+                <div class="bounty">
+                    <div class="bounty-colonna">
+                    <section class="gruppo bounty-lista" aria-labelledby="t-materiali">
+                        <h3 id="t-materiali" class="etichetta">Materiali</h3>
+                        <div class="tabella" id="bounty-materiali" data-colonne="Materiale|Quantità|Ricavo (UEC)"></div>
+                        <button type="button" class="pulsante piccolo" data-aggiungi="materiali" data-comando data-solo-comando>
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Aggiungi materiale</button>
+                    </section>
+                    <section class="gruppo bounty-lista" aria-labelledby="t-spese">
+                        <h3 id="t-spese" class="etichetta">Spese fisse</h3>
+                        <div class="tabella" id="bounty-spese" data-colonne="Descrizione|Importo|Chi l'ha pagata"></div>
+                        <button type="button" class="pulsante piccolo" data-aggiungi="spese" data-comando data-solo-comando>
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Aggiungi spesa</button>
+                    </section>
+                    <section class="gruppo bounty-lista" aria-labelledby="t-pagamenti">
+                        <h3 id="t-pagamenti" class="etichetta">Pagamenti</h3>
+                        <div class="tabella" id="bounty-pagamenti" data-colonne="Player|Δ %|Quota"></div>
+                        <button type="button" class="pulsante piccolo" data-aggiungi="pagamenti" data-comando data-solo-comando>
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Aggiungi player</button>
+                    </section>
+                    </div>
+                    <div class="bounty-colonna bounty-conti">
+                    <section class="gruppo riepilogo" aria-labelledby="t-riepilogo">
+                        <h3 id="t-riepilogo" class="etichetta">Riepilogo</h3>
+                        <dl class="conti">
+                            <div><dt>Ricavo lordo</dt><dd><output id="r-lordo">0</output> UEC</dd></div>
+                            <div><dt>Spese fisse</dt><dd><output id="r-spese">0</output> UEC</dd></div>
+                            <div><dt>Commissione banca</dt><dd><output id="r-banca">0</output> UEC</dd></div>
+                            <div><dt>Commissione org</dt><dd><output id="r-org">0</output> UEC</dd></div>
+                            <div><dt>Commissione giver</dt><dd><output id="r-giver">0</output> UEC</dd></div>
+                            <div><dt>Commissione venditore</dt><dd><output id="r-venditore">0</output> UEC</dd></div>
+                            <div class="conti-totale"><dt>Profitto netto</dt><dd><output id="r-netto">0</output> UEC</dd></div>
+                        </dl>
+                        <button type="button" class="pulsante pericolo piccolo" id="bounty-pulisci" data-comando data-solo-comando>
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#broom"/></svg>Pulisci tutto</button>
+                    </section>
+                    <section class="gruppo" aria-labelledby="t-commissioni">
+                        <h3 id="t-commissioni" class="etichetta">Commissioni</h3>
+                        <div class="griglia-campi">
+                            <div class="campo"><label for="b-bank">Banca (%)</label><input id="b-bank" type="number" step="0.1" inputmode="decimal" data-config="bank" data-comando></div>
+                            <div class="campo"><label for="b-org">Org (%)</label><input id="b-org" type="number" step="0.1" inputmode="decimal" data-config="org" data-comando></div>
+                            <div class="campo"><label for="b-giver">Giver (%)</label><input id="b-giver" type="number" step="0.1" inputmode="decimal" data-config="giverPct" data-comando></div>
+                            <div class="campo"><label for="b-giver-nome">Nome giver</label><input id="b-giver-nome" type="text" data-config="giverName" data-comando></div>
+                            <div class="campo"><label for="b-seller">Venditore (%)</label><input id="b-seller" type="number" step="0.1" inputmode="decimal" data-config="sellerPct" data-comando></div>
+                            <div class="campo"><label for="b-seller-nome">Nome venditore</label><input id="b-seller-nome" type="text" data-config="sellerName" data-comando></div>
+                            <div class="campo"><label for="b-tesoriere">Nome tesoriere</label><input id="b-tesoriere" type="text" data-config="treasName" data-comando></div>
+                        </div>
+                    </section>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MISSIONE -->
+            <div class="vista" data-vista="missione" data-titolo="Missione" hidden>
+                <section class="gruppo" aria-labelledby="t-comando">
+                    <h3 id="t-comando" class="etichetta">Comando</h3>
+                    <p id="comando-frase" class="frase"></p>
+                    <div class="azioni-riga">
+                        <button type="button" class="targhetta piccola" id="chiedi-comando" hidden>
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#hand"/></svg>Chiedi il comando</button>
+                        <button type="button" class="pulsante piccolo" id="lascia-comando" hidden>Lascia il comando</button>
+                    </div>
+                    <div id="richieste" data-ufficiali hidden></div>
+                </section>
+
+                <section class="gruppo" aria-labelledby="t-collegati">
+                    <h3 id="t-collegati" class="etichetta">Collegati <span id="conta-collegati" class="conta"></span></h3>
+                    <ul id="collegati" class="collegati"></ul>
+                </section>
+
+                <section class="gruppo" aria-labelledby="t-file">
+                    <h3 id="t-file" class="etichetta">File della missione</h3>
+                    <p class="aiuto">Salva icone, disegni, mappa e bounty in un file; caricalo per riprendere da lì.</p>
+                    <div class="azioni-riga">
+                        <button type="button" class="pulsante" id="salva-missione">
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#download-simple"/></svg>Salva</button>
+                        <button type="button" class="pulsante" id="carica-missione" data-comando>
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#folder-open"/></svg>Carica</button>
+                    </div>
+                    <input type="file" id="file-missione" accept=".json,application/json" hidden>
+                </section>
+
+                <section class="gruppo" aria-labelledby="t-azzera" id="gruppo-azzera" hidden>
+                    <h3 id="t-azzera" class="etichetta">Azzera</h3>
+                    <p class="aiuto">Toglie tutte le icone e tutti i disegni per tutti. Mappa e bounty restano.</p>
+                    <button type="button" class="pulsante pericolo" id="azzera-mappa">
+                        <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#warning"/></svg>Azzera la mappa</button>
+                </section>
+
+                <section class="gruppo" aria-labelledby="t-registro" data-ufficiali hidden>
+                    <h3 id="t-registro" class="etichetta">Registro</h3>
+                    <ol id="registro" class="registro" aria-live="off"></ol>
+                </section>
+
+                <section class="gruppo" aria-labelledby="t-aiuto">
+                    <h3 id="t-aiuto" class="etichetta">Come si usa</h3>
+                    <dl class="comandi">
+                        <div><dt>Doppio tocco o doppio clic</dt><dd>Ping con suono, visibile a tutti</dd></div>
+                        <div><dt>Tocca un'icona</dt><dd>Apre la sua scheda: nome, fazione, cerchio, squadra</dd></div>
+                        <div><dt>Trascina un'icona</dt><dd>La sposta (serve il comando)</dd></div>
+                        <div><dt>Maiusc + clic, tasto centrale</dt><dd>Seleziona più icone; dal tablet: «Seleziona altre» nella scheda</dd></div>
+                        <div><dt>Clic destro su un'icona</dt><dd>Accende o spegne il cerchio tattico</dd></div>
+                        <div><dt>Matita: fermati a fine tratto</dt><dd>Raddrizza la forma: cerchio, rettangolo, freccia</dd></div>
+                        <div><dt>Esc</dt><dd>Chiude il pannello o la scheda aperta</dd></div>
+                    </dl>
+                </section>
+
+                <section class="gruppo" aria-labelledby="t-account">
+                    <h3 id="t-account" class="etichetta">Il tuo accesso</h3>
+                    <p class="frase" id="account-frase"></p>
+                    <a class="pulsante piccolo" href="/logout" id="esci">
+                        <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#sign-out"/></svg>Esci</a>
+                </section>
+            </div>
+        </div>
+    </section>
+
+    <!-- La mappa -->
+    <div id="mappa" class="mappa" aria-label="Mappa tattica"></div>
+
+    <!-- Sopra la mappa -->
+    <div class="stato-comando" id="stato-comando"></div>
+
+    <div class="controlli-mappa" role="group" aria-label="Vista della mappa">
+        <button type="button" class="pulsante-icona" id="zoom-piu" aria-label="Avvicina"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg></button>
+        <button type="button" class="pulsante-icona" id="zoom-meno" aria-label="Allontana"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#minus"/></svg></button>
+        <button type="button" class="pulsante-icona" id="centra" aria-label="Centra la mappa"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#corners-in"/></svg></button>
+    </div>
+
+    <div id="caricamento-mappa" class="pillola" role="status" hidden>
+        <span class="giro" aria-hidden="true"></span>Carico la mappa…
+    </div>
+
+    <div id="barra-disegno" class="barra-disegno" hidden role="toolbar" aria-label="Disegno">
+        <div class="barra-riga">
+            <div class="segmenti strumenti" role="radiogroup" aria-label="Strumento">
+                <button type="button" role="radio" aria-checked="false" data-strumento="matita"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#pencil-simple"/></svg><span>Matita</span></button>
+                <button type="button" role="radio" aria-checked="false" data-strumento="gomma"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#eraser"/></svg><span>Gomma</span></button>
+                <button type="button" role="radio" aria-checked="false" data-strumento="testo"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#text-t"/></svg><span>Testo</span></button>
+            </div>
+            <div class="colori" id="colori-disegno" role="radiogroup" aria-label="Colore"></div>
+            <div class="barra-azioni">
+                <button type="button" class="pulsante-icona" id="annulla-disegno" aria-label="Annulla l'ultimo disegno"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#arrow-counter-clockwise"/></svg></button>
+                <button type="button" class="pulsante-icona" id="pulisci-disegni" aria-label="Cancella tutti i disegni"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#trash"/></svg></button>
+                <button type="button" class="pulsante-icona" id="chiudi-disegno" aria-label="Fine disegno"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#check"/></svg></button>
+            </div>
+        </div>
+        <p class="barra-aiuto" id="aiuto-disegno"></p>
+    </div>
+
+    <div id="barra-selezione" class="barra-selezione" hidden>
+        <span id="conta-selezione" class="frase"></span>
+        <button type="button" class="pulsante piccolo pericolo" id="elimina-selezione" data-comando>
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#trash"/></svg>Elimina</button>
+        <button type="button" class="pulsante piccolo" id="fine-selezione">Fine</button>
+    </div>
+
+    <div id="goniometro-comandi" class="goniometro-comandi" hidden>
+        <label for="goniometro-angolo" class="etichetta">Goniometro</label>
+        <input type="range" id="goniometro-angolo" min="0" max="359" step="1" value="0">
+        <output id="goniometro-gradi" for="goniometro-angolo">0°</output>
+        <button type="button" class="pulsante-icona" id="goniometro-chiudi" aria-label="Togli il goniometro"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#x"/></svg></button>
+    </div>
+
+    <!-- Scheda dell'icona toccata -->
+    <aside id="scheda" class="scheda" hidden aria-labelledby="scheda-titolo" tabindex="-1">
+        <header class="scheda-testa">
+            <img id="scheda-icona" class="scheda-icona" alt="">
+            <div class="scheda-nomi">
+                <p class="etichetta" id="scheda-tipo"></p>
+                <h2 id="scheda-titolo" class="ricamo"></h2>
+            </div>
+            <button type="button" class="pulsante-icona" id="scheda-chiudi" aria-label="Chiudi la scheda">
+                <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#x"/></svg>
+            </button>
+        </header>
+        <div class="scheda-corpo">
+            <p class="nota-comando">Solo visione: chiedi il comando per modificare.</p>
+            <div class="campo"><label for="scheda-nome">Nome</label>
+                <input id="scheda-nome" type="text" maxlength="60" autocomplete="off" data-comando></div>
+            <div class="campo">
+                <span class="etichetta" id="t-scheda-fazione">Fazione</span>
+                <div class="segmenti" role="radiogroup" aria-labelledby="t-scheda-fazione" id="scheda-fazione">
+                    <button type="button" role="radio" data-fazione="amica" data-comando>Amica</button>
+                    <button type="button" role="radio" data-fazione="nemica" data-comando>Nemica</button>
+                </div>
+            </div>
+            <div class="campo">
+                <span class="etichetta" id="t-scheda-colore">Colore del nome</span>
+                <div class="colori" id="scheda-colori" role="radiogroup" aria-labelledby="t-scheda-colore"></div>
+            </div>
+            <div class="campo">
+                <label class="spunta"><input type="checkbox" id="scheda-cerchio" data-comando><span>Cerchio tattico</span></label>
+                <div class="raggio" id="scheda-raggio-campo" hidden>
+                    <label for="scheda-raggio" class="etichetta">Raggio</label>
+                    <input type="range" id="scheda-raggio" min="20" max="600" step="10" data-comando>
+                </div>
+            </div>
+            <div id="scheda-squadra">
+                <div class="campo"><label for="scheda-capo">Caposquadra</label>
+                    <input id="scheda-capo" type="text" maxlength="80" autocomplete="off" data-comando></div>
+                <div class="campo"><label for="scheda-vice">Vice</label>
+                    <input id="scheda-vice" type="text" maxlength="80" autocomplete="off" data-comando></div>
+                <div class="campo"><label for="scheda-membri">Membri</label>
+                    <textarea id="scheda-membri" rows="3" maxlength="600" placeholder="Separati da virgola" data-comando></textarea></div>
+            </div>
+            <div class="azioni-colonna scheda-azioni">
+                <button type="button" class="pulsante" id="scheda-orbita" data-comando>
+                    <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#planet"/></svg>Manda in orbita</button>
+                <button type="button" class="pulsante" id="scheda-seleziona">
+                    <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#selection-plus"/></svg>Seleziona altre icone</button>
+                <button type="button" class="pulsante pericolo" id="scheda-elimina" data-comando>
+                    <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#trash"/></svg>Elimina</button>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<div id="avvisi" class="avvisi" aria-live="polite" aria-atomic="false"></div>
+
+<dialog id="dialogo" class="dialogo" aria-labelledby="dialogo-titolo">
+    <form method="dialog">
+        <h2 id="dialogo-titolo" class="ricamo"></h2>
+        <p id="dialogo-testo" class="frase"></p>
+        <div class="campo" id="dialogo-campo" hidden>
+            <label for="dialogo-input" id="dialogo-etichetta"></label>
+            <input id="dialogo-input" type="text" maxlength="200" autocomplete="off">
+        </div>
+        <div class="azioni-riga dialogo-azioni">
+            <button type="submit" value="no" class="pulsante" id="dialogo-no">Annulla</button>
+            <button type="submit" value="si" class="targhetta piccola" id="dialogo-si">Conferma</button>
+        </div>
+    </form>
+</dialog>
+
+</body>
+</html>
