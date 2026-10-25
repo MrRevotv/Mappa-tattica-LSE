@@ -10,7 +10,7 @@ let aperto = null;
 const voce = (nome) => $(`.binario-voce[data-pannello="${nome}"]`);
 
 function segnaVoci() {
-    for (const b of $$('.binario-voce')) {
+    for (const b of $$('.binario-voce[data-pannello]')) {
         const nome = b.dataset.pannello;
         b.setAttribute('aria-expanded', String(nome === 'disegna' ? barraAperta() : nome === aperto));
     }
@@ -40,7 +40,6 @@ export function apriPannello(nome) {
     for (const vista of $$('.vista', pannello)) vista.hidden = vista.dataset.vista !== nome;
     const vista = $(`.vista[data-vista="${nome}"]`, pannello);
     $('#pannello-titolo').textContent = vista.dataset.titolo;
-    pannello.classList.toggle('largo', vista.classList.contains('vista-larga'));
     pannello.hidden = false;
     $('.pannello-corpo', pannello).scrollTop = 0;
     segnaVoci();
@@ -60,7 +59,7 @@ export function chiudiPannello({ rimettiFuoco = false } = {}) {
 export const pannelloAperto = () => aperto;
 
 export function avviaPannelli() {
-    for (const b of $$('.binario-voce')) b.addEventListener('click', () => apriPannello(b.dataset.pannello));
+    for (const b of $$('.binario-voce[data-pannello]')) b.addEventListener('click', () => apriPannello(b.dataset.pannello));
     $('[data-chiudi-pannello]').addEventListener('click', () => chiudiPannello({ rimettiFuoco: true }));
 
     // Esc chiude una cosa alla volta: prima quella che si sta usando (scheda, disegno, selezione), poi il pannello.

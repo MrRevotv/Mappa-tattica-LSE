@@ -1,7 +1,6 @@
-// Pannello "Bounty e salvage": materiali, spese, pagamenti e commissioni, condivisi in tempo reale.
-// Stesso calcolo e stesso formato dati della mappa di prima.
-import { app, invia, on } from './stato.js';
-import { $, $$, crea, icona, conferma, rimanda } from './ui.js';
+// Il calcolatore «Bounty e salvage»: materiali, spese, pagamenti e commissioni.
+// Stesso calcolo e stesso formato dati della mappa di prima; chi lo usa riceve i dati con cambiato(dati).
+import { $, $$, crea, icona, conferma } from './ui.js';
 
 const LISTE = {
     materiali: { campi: [['name', 'text'], ['qty', 'number'], ['price', 'number']], vuoto: 'Nessun materiale.' },
@@ -12,6 +11,7 @@ const CONFIG_PREDEFINITA = { bank: '0.5', org: '0', giverPct: '0', sellerPct: '0
 const numero = (v) => Number(String(v).replace(',', '.')) || 0;
 const uec = (n) => Math.round(n).toLocaleString('it-IT');
 
+let avvisa = () => {};
 const contenitore = (lista) => $(`#bounty-${lista}`);
 
 function testata(lista) {
@@ -26,8 +26,7 @@ function riga(lista, valori = {}) {
         const input = crea('input', {
             type: tipo,
             'aria-label': etichette[i],
-            dataset: { campo, comando: '' },
-            disabled: !app.comando,
+            dataset: { campo },
             ...(tipo === 'number' && { inputmode: 'decimal', step: 'any', min: lista === 'pagamenti' ? false : '0' }),
         });
         input.value = valori[campo] ?? (campo === 'delta' ? '0' : '');
@@ -38,8 +37,6 @@ function riga(lista, valori = {}) {
         type: 'button',
         class: 'pulsante-icona',
         'aria-label': 'Togli la riga',
-        dataset: { comando: '', soloComando: '' },
-        disabled: !app.comando,
         onclick: () => { el.remove(); quandoCambia(); },
     }, icona('x')));
     return el;
@@ -58,7 +55,7 @@ function sistemaVuoto(lista) {
     if (!senzaRighe) vuoto?.remove();
 }
 
-function leggi() {
+export function leggi() {
     const dati = {};
     for (const lista of Object.keys(LISTE)) {
         dati[lista] = righe(lista).map((r) => Object.fromEntries($$('input', r).map((i) => [i.dataset.campo, i.value])));
@@ -113,19 +110,14 @@ function calcola() {
     });
 }
 
-const inviaDopo = rimanda(() => invia('bounty', leggi()), 400);
-
 function quandoCambia() {
     for (const lista of Object.keys(LISTE)) sistemaVuoto(lista);
     calcola();
-    if (app.comando) {
-        app.stato.bounty = leggi();
-        inviaDopo();
-    }
+    avvisa(leggi());
 }
 
 // Dati arrivati (all'ingresso o da un altro): si aggiornano le caselle senza togliere il cursore a chi scrive.
-function applica(dati) {
+export function applica(dati) {
     for (const lista of Object.keys(LISTE)) {
         const c = contenitore(lista);
         const valori = Array.isArray(dati?.[lista]) ? dati[lista] : [];
@@ -149,7 +141,9 @@ function applica(dati) {
     calcola();
 }
 
-export function avviaPannelloBounty() {
+// cambiato(dati) a ogni modifica fatta qui (non per i dati arrivati con applica).
+export function avviaCalcolatore({ cambiato }) {
+    avvisa = cambiato;
     for (const lista of Object.keys(LISTE)) contenitore(lista).append(testata(lista));
     $('.bounty').addEventListener('input', (e) => { if (e.target.matches('input')) quandoCambia(); });
     for (const b of $$('[data-aggiungi]')) {
@@ -161,13 +155,10 @@ export function avviaPannelloBounty() {
         });
     }
     $('#bounty-pulisci').addEventListener('click', async () => {
-        const ok = await conferma({ titolo: 'Pulire il calcolatore?', testo: 'Materiali, spese e pagamenti tornano vuoti per tutti. Le commissioni restano.', si: 'Pulisci', pericolo: true });
+        const ok = await conferma({ titolo: 'Pulire il calcolatore?', testo: 'Materiali, spese e pagamenti tornano vuoti per tutti quelli della sessione. Le commissioni restano.', si: 'Pulisci', pericolo: true });
         if (!ok) return;
         applica({ materiali: [{}], spese: [{}], pagamenti: [{}], config: leggi().config });
         quandoCambia();
-        inviaDopo.subito();
     });
-    on('stato:nuovo', () => applica(app.stato.bounty));
-    on('bounty', (dati) => applica(dati));
-    on('comando', () => { for (const el of $$('.bounty [data-comando]')) el.disabled = !app.comando; });
+    applica(null);
 }

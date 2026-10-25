@@ -56,9 +56,9 @@
         <button type="button" class="binario-voce" data-pannello="squadre" aria-controls="pannello" aria-expanded="false">
             <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#users-three"/></svg><span>Squadre</span>
         </button>
-        <button type="button" class="binario-voce" data-pannello="bounty" aria-controls="pannello" aria-expanded="false">
+        <a class="binario-voce" href="/bounty" target="_blank" rel="noopener" title="Apre il calcolatore Bounty in una scheda nuova">
             <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#coins"/></svg><span>Bounty</span>
-        </button>
+        </a>
         <button type="button" class="binario-voce" data-pannello="missione" aria-controls="pannello" aria-expanded="false">
             <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#shield-star"/></svg><span>Commando</span>
             <span class="binario-segnale" id="segnale-richieste" hidden></span>
@@ -159,63 +159,20 @@
                 </section>
             </div>
 
-            <!-- BOUNTY -->
-            <div class="vista vista-larga" data-vista="bounty" data-titolo="Bounty e salvage" hidden>
-                <p class="nota-comando">Solo visione: chiedi il comando per modificare i conti.</p>
-                <div class="bounty">
-                    <div class="bounty-colonna">
-                    <section class="gruppo bounty-lista" aria-labelledby="t-materiali">
-                        <h3 id="t-materiali" class="etichetta">Materiali</h3>
-                        <div class="tabella" id="bounty-materiali" data-colonne="Materiale|Quantità|Ricavo (UEC)"></div>
-                        <button type="button" class="pulsante piccolo" data-aggiungi="materiali" data-comando data-solo-comando>
-                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Aggiungi materiale</button>
-                    </section>
-                    <section class="gruppo bounty-lista" aria-labelledby="t-spese">
-                        <h3 id="t-spese" class="etichetta">Spese fisse</h3>
-                        <div class="tabella" id="bounty-spese" data-colonne="Descrizione|Importo|Chi l'ha pagata"></div>
-                        <button type="button" class="pulsante piccolo" data-aggiungi="spese" data-comando data-solo-comando>
-                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Aggiungi spesa</button>
-                    </section>
-                    <section class="gruppo bounty-lista" aria-labelledby="t-pagamenti">
-                        <h3 id="t-pagamenti" class="etichetta">Pagamenti</h3>
-                        <div class="tabella" id="bounty-pagamenti" data-colonne="Player|Δ %|Quota"></div>
-                        <button type="button" class="pulsante piccolo" data-aggiungi="pagamenti" data-comando data-solo-comando>
-                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Aggiungi player</button>
-                    </section>
-                    </div>
-                    <div class="bounty-colonna bounty-conti">
-                    <section class="gruppo riepilogo" aria-labelledby="t-riepilogo">
-                        <h3 id="t-riepilogo" class="etichetta">Riepilogo</h3>
-                        <dl class="conti">
-                            <div><dt>Ricavo lordo</dt><dd><output id="r-lordo">0</output> UEC</dd></div>
-                            <div><dt>Spese fisse</dt><dd><output id="r-spese">0</output> UEC</dd></div>
-                            <div><dt>Commissione banca</dt><dd><output id="r-banca">0</output> UEC</dd></div>
-                            <div><dt>Commissione org</dt><dd><output id="r-org">0</output> UEC</dd></div>
-                            <div><dt>Commissione giver</dt><dd><output id="r-giver">0</output> UEC</dd></div>
-                            <div><dt>Commissione venditore</dt><dd><output id="r-venditore">0</output> UEC</dd></div>
-                            <div class="conti-totale"><dt>Profitto netto</dt><dd><output id="r-netto">0</output> UEC</dd></div>
-                        </dl>
-                        <button type="button" class="pulsante pericolo piccolo" id="bounty-pulisci" data-comando data-solo-comando>
-                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#broom"/></svg>Pulisci tutto</button>
-                    </section>
-                    <section class="gruppo" aria-labelledby="t-commissioni">
-                        <h3 id="t-commissioni" class="etichetta">Commissioni</h3>
-                        <div class="griglia-campi">
-                            <div class="campo"><label for="b-bank">Banca (%)</label><input id="b-bank" type="number" step="0.1" inputmode="decimal" data-config="bank" data-comando></div>
-                            <div class="campo"><label for="b-org">Org (%)</label><input id="b-org" type="number" step="0.1" inputmode="decimal" data-config="org" data-comando></div>
-                            <div class="campo"><label for="b-giver">Giver (%)</label><input id="b-giver" type="number" step="0.1" inputmode="decimal" data-config="giverPct" data-comando></div>
-                            <div class="campo"><label for="b-giver-nome">Nome giver</label><input id="b-giver-nome" type="text" data-config="giverName" data-comando></div>
-                            <div class="campo"><label for="b-seller">Venditore (%)</label><input id="b-seller" type="number" step="0.1" inputmode="decimal" data-config="sellerPct" data-comando></div>
-                            <div class="campo"><label for="b-seller-nome">Nome venditore</label><input id="b-seller-nome" type="text" data-config="sellerName" data-comando></div>
-                            <div class="campo"><label for="b-tesoriere">Nome tesoriere</label><input id="b-tesoriere" type="text" data-config="treasName" data-comando></div>
-                        </div>
-                    </section>
-                    </div>
-                </div>
-            </div>
-
             <!-- COMMANDO (comando e file della missione) -->
             <div class="vista" data-vista="missione" data-titolo="Commando" hidden>
+                <section class="gruppo" aria-labelledby="t-sessione">
+                    <h3 id="t-sessione" class="etichetta">Sessione</h3>
+                    <p id="sessione-nome" class="sessione-nome"></p>
+                    <p id="sessione-info" class="aiuto"></p>
+                    <div class="azioni-riga">
+                        <button type="button" class="pulsante piccolo" id="cambia-sessione">
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#list"/></svg>Cambia o crea<span id="conta-sessioni" class="conta"></span></button>
+                        <button type="button" class="pulsante piccolo pericolo" id="chiudi-sessione" hidden>
+                            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#trash"/></svg>Chiudi questa sessione</button>
+                    </div>
+                </section>
+
                 <section class="gruppo" aria-labelledby="t-comando">
                     <h3 id="t-comando" class="etichetta">Comando</h3>
                     <p id="comando-frase" class="frase"></p>
@@ -224,7 +181,7 @@
                             <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#hand"/></svg>Chiedi il comando</button>
                         <button type="button" class="pulsante piccolo" id="lascia-comando" hidden>Lascia il comando</button>
                     </div>
-                    <div id="richieste" data-ufficiali hidden></div>
+                    <div id="richieste" data-capi hidden></div>
                 </section>
 
                 <section class="gruppo" aria-labelledby="t-collegati">
@@ -234,7 +191,7 @@
 
                 <section class="gruppo" aria-labelledby="t-file">
                     <h3 id="t-file" class="etichetta">File della missione</h3>
-                    <p class="aiuto">Salva icone, disegni, mappa e bounty in un file; caricalo per riprendere da lì.</p>
+                    <p class="aiuto">Salva mappa, icone e disegni di questa sessione in un file; caricalo per riprendere da lì.</p>
                     <div class="azioni-riga">
                         <button type="button" class="pulsante" id="salva-missione">
                             <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#download-simple"/></svg>Salva</button>
@@ -246,12 +203,12 @@
 
                 <section class="gruppo" aria-labelledby="t-azzera" id="gruppo-azzera" hidden>
                     <h3 id="t-azzera" class="etichetta">Azzera</h3>
-                    <p class="aiuto">Toglie tutte le icone e tutti i disegni per tutti. Mappa e bounty restano.</p>
+                    <p class="aiuto">Toglie tutte le icone e tutti i disegni di questa sessione, per tutti. La mappa resta.</p>
                     <button type="button" class="pulsante pericolo" id="azzera-mappa">
                         <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#warning"/></svg>Azzera la mappa</button>
                 </section>
 
-                <section class="gruppo" aria-labelledby="t-registro" data-ufficiali hidden>
+                <section class="gruppo" aria-labelledby="t-registro" data-capi hidden>
                     <h3 id="t-registro" class="etichetta">Registro</h3>
                     <ol id="registro" class="registro" tabindex="0" aria-label="Registro della missione"></ol>
                 </section>
@@ -379,6 +336,21 @@
 </main>
 
 <div id="avvisi" class="avvisi" aria-live="polite" aria-atomic="false"></div>
+
+<!-- Scelta della sessione: all'arrivo (se ce n'è più di una) e da «Cambia o crea» -->
+<dialog id="dialogo-sessioni" class="dialogo dialogo-sessioni" aria-labelledby="sessioni-titolo">
+    <div class="dialogo-corpo">
+        <h2 id="sessioni-titolo" class="ricamo">Scegli la sessione</h2>
+        <p class="aiuto">Ogni sessione ha la sua mappa, le sue icone e il suo comando. Chi ne apre una ci ha sempre il
+            comando; resta salvata e si cancella da sola dopo 5 giorni che nessuno la usa.</p>
+        <ul id="elenco-sessioni" class="elenco-sessioni"></ul>
+        <div class="azioni-riga dialogo-azioni">
+            <button type="button" class="pulsante" id="sessioni-chiudi">Chiudi</button>
+            <button type="button" class="pulsante" id="sessioni-nuova">
+                <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Nuova sessione</button>
+        </div>
+    </div>
+</dialog>
 
 <dialog id="dialogo" class="dialogo" aria-labelledby="dialogo-titolo">
     <form method="dialog">

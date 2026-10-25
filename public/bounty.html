@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="it" class="pagina-bounty">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#141312">
+    <meta name="color-scheme" content="dark">
+    <title>Bounty e salvage · LSE</title>
+    <link rel="icon" type="image/png" href="img/lse-96.png">
+    <link rel="apple-touch-icon" href="img/lse-192.png">
+    <link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="stylesheet" href="css/mappa.css">
+    <script src="/socket.io/socket.io.js" defer></script>
+    <script type="module" src="js/bounty.js"></script>
+</head>
+<body>
+
+<!-- Mentre si apre -->
+<div id="avvio" class="avvio" role="status">
+    <span class="toppa-attesa" aria-hidden="true"><img src="img/lse-96.png" alt=""></span>
+    <p>Apro il calcolatore…</p>
+</div>
+
+<!-- Ingresso -->
+<main id="ingresso" class="ingresso" hidden>
+    <div class="ingresso-scheda">
+        <img class="ingresso-logo" src="img/lse-192.png" alt="" width="96" height="96">
+        <h1 class="ricamo ingresso-titolo">Bounty e salvage</h1>
+        <p class="ingresso-org">Logistic Space Economy</p>
+        <p class="ingresso-testo">Il calcolatore condiviso per dividere i guadagni di un'operazione.</p>
+        <p id="ingresso-errore" class="ingresso-errore" role="alert" hidden></p>
+        <a class="targhetta" href="/auth/discord?vai=bounty">
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#discord-logo"/></svg>
+            Accedi con Discord
+        </a>
+        <p class="ingresso-nota">Sei nella LSE? Lo trovi anche sul sito: Area membri → Strumenti.</p>
+    </div>
+</main>
+
+<div id="app" class="pagina" hidden>
+    <header class="pagina-testa">
+        <img src="img/lse-96.png" alt="LSE" width="36" height="36">
+        <h1 class="ricamo">Bounty e salvage</h1>
+        <span class="pagina-utente" id="utente"></span>
+        <a class="pulsante piccolo" href="/logout?vai=bounty" id="esci">
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#sign-out"/></svg>Esci</a>
+    </header>
+
+    <main class="pagina-corpo">
+        <!-- Elenco delle sessioni -->
+        <section id="vista-elenco" aria-labelledby="t-sessioni">
+            <div class="elenco-testa">
+                <h2 id="t-sessioni" class="ricamo">Sessioni</h2>
+                <button type="button" class="targhetta piccola" id="nuova-sessione">
+                    <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Nuova sessione</button>
+            </div>
+            <p class="aiuto">Ogni sessione è un calcolatore a sé: chi entra la vede e la compila insieme agli altri, in tempo
+                reale. Resta salvata e si cancella da sola dopo 5 giorni che nessuno la apre; chi l'ha creata la può
+                chiudere prima.</p>
+            <ul id="elenco-sessioni" class="elenco-sessioni"></ul>
+            <p id="elenco-vuoto" class="vuoto" hidden>Nessuna sessione aperta: creane una con «Nuova sessione».</p>
+        </section>
+
+        <!-- La sessione aperta -->
+        <section id="vista-sessione" aria-labelledby="sessione-nome" hidden>
+            <div class="sessione-testa">
+                <button type="button" class="torna" id="torna-elenco">
+                    <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#caret-left"/></svg>Tutte le sessioni<span id="conta-sessioni" class="conta"></span></button>
+                <div class="sessione-titoli">
+                    <h2 id="sessione-nome" class="ricamo"></h2>
+                    <p id="sessione-info" class="sessione-info"></p>
+                    <ul id="sessione-presenti" class="presenti" aria-label="Chi c'è dentro ora"></ul>
+                </div>
+                <div class="azioni-riga sessione-azioni">
+                    <button type="button" class="pulsante piccolo" id="scarica-bounty">
+                        <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#download-simple"/></svg>Salva file</button>
+                    <button type="button" class="pulsante piccolo" id="carica-bounty">
+                        <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#folder-open"/></svg>Carica file</button>
+                    <button type="button" class="pulsante piccolo pericolo" id="chiudi-sessione" hidden>
+                        <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#trash"/></svg>Chiudi sessione</button>
+                </div>
+                <input type="file" id="file-bounty" accept=".json,application/json" hidden>
+            </div>
+
+            <div class="bounty">
+                <div class="bounty-colonna">
+                <section class="gruppo bounty-lista" aria-labelledby="t-materiali">
+                    <h3 id="t-materiali" class="etichetta">Materiali</h3>
+                    <div class="tabella" id="bounty-materiali" data-colonne="Materiale|Quantità|Ricavo (UEC)"></div>
+                    <button type="button" class="pulsante piccolo" data-aggiungi="materiali">
+                        <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Aggiungi materiale</button>
+                </section>
+                <section class="gruppo bounty-lista" aria-labelledby="t-spese">
+                    <h3 id="t-spese" class="etichetta">Spese fisse</h3>
+                    <div class="tabella" id="bounty-spese" data-colonne="Descrizione|Importo|Chi l'ha pagata"></div>
+                    <button type="button" class="pulsante piccolo" data-aggiungi="spese">
+                        <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Aggiungi spesa</button>
+                </section>
+                <section class="gruppo bounty-lista" aria-labelledby="t-pagamenti">
+                    <h3 id="t-pagamenti" class="etichetta">Pagamenti</h3>
+                    <div class="tabella" id="bounty-pagamenti" data-colonne="Player|Δ %|Quota"></div>
+                    <button type="button" class="pulsante piccolo" data-aggiungi="pagamenti">
+                        <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg>Aggiungi player</button>
+                </section>
+                </div>
+                <div class="bounty-colonna bounty-conti">
+                <section class="gruppo riepilogo" aria-labelledby="t-riepilogo">
+                    <h3 id="t-riepilogo" class="etichetta">Riepilogo</h3>
+                    <dl class="conti">
+                        <div><dt>Ricavo lordo</dt><dd><output id="r-lordo">0</output> UEC</dd></div>
+                        <div><dt>Spese fisse</dt><dd><output id="r-spese">0</output> UEC</dd></div>
+                        <div><dt>Commissione banca</dt><dd><output id="r-banca">0</output> UEC</dd></div>
+                        <div><dt>Commissione org</dt><dd><output id="r-org">0</output> UEC</dd></div>
+                        <div><dt>Commissione giver</dt><dd><output id="r-giver">0</output> UEC</dd></div>
+                        <div><dt>Commissione venditore</dt><dd><output id="r-venditore">0</output> UEC</dd></div>
+                        <div class="conti-totale"><dt>Profitto netto</dt><dd><output id="r-netto">0</output> UEC</dd></div>
+                    </dl>
+                    <button type="button" class="pulsante pericolo piccolo" id="bounty-pulisci">
+                        <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#broom"/></svg>Pulisci tutto</button>
+                </section>
+                <section class="gruppo" aria-labelledby="t-commissioni">
+                    <h3 id="t-commissioni" class="etichetta">Commissioni</h3>
+                    <div class="griglia-campi">
+                        <div class="campo"><label for="b-bank">Banca (%)</label><input id="b-bank" type="number" step="0.1" inputmode="decimal" data-config="bank"></div>
+                        <div class="campo"><label for="b-org">Org (%)</label><input id="b-org" type="number" step="0.1" inputmode="decimal" data-config="org"></div>
+                        <div class="campo"><label for="b-giver">Giver (%)</label><input id="b-giver" type="number" step="0.1" inputmode="decimal" data-config="giverPct"></div>
+                        <div class="campo"><label for="b-giver-nome">Nome giver</label><input id="b-giver-nome" type="text" data-config="giverName"></div>
+                        <div class="campo"><label for="b-seller">Venditore (%)</label><input id="b-seller" type="number" step="0.1" inputmode="decimal" data-config="sellerPct"></div>
+                        <div class="campo"><label for="b-seller-nome">Nome venditore</label><input id="b-seller-nome" type="text" data-config="sellerName"></div>
+                        <div class="campo"><label for="b-tesoriere">Nome tesoriere</label><input id="b-tesoriere" type="text" data-config="treasName"></div>
+                    </div>
+                </section>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+
+<div id="avvisi" class="avvisi" aria-live="polite" aria-atomic="false"></div>
+
+<dialog id="dialogo" class="dialogo" aria-labelledby="dialogo-titolo">
+    <form method="dialog">
+        <h2 id="dialogo-titolo" class="ricamo"></h2>
+        <p id="dialogo-testo" class="frase"></p>
+        <div class="campo" id="dialogo-campo" hidden>
+            <label for="dialogo-input" id="dialogo-etichetta"></label>
+            <input id="dialogo-input" type="text" maxlength="200" autocomplete="off">
+        </div>
+        <div class="azioni-riga dialogo-azioni">
+            <button type="submit" value="no" class="pulsante" id="dialogo-no">Annulla</button>
+            <button type="submit" value="si" class="targhetta piccola" id="dialogo-si">Conferma</button>
+        </div>
+    </form>
+</dialog>
+
+</body>
+</html>

@@ -1,6 +1,6 @@
-// Chi ha il comando: i campi che si bloccano in sola visione, le richieste che arrivano agli ufficiali.
+// Chi ha il comando: i campi che si bloccano in sola visione, le richieste che arrivano ai capi della sessione.
 // Lo stato del comando si vede e si chiede nel pannello «Commando».
-import { app, emetti, invia, on, eUfficiale } from './stato.js';
+import { app, emetti, invia, on } from './stato.js';
 import { $, $$, avviso } from './ui.js';
 import { suonoRichiesta } from './suoni.js';
 import { apriPannello } from './pannelli.js';
@@ -17,7 +17,7 @@ export function aggiornaComando() {
     document.body.classList.toggle('sola-visione', !app.comando);
     for (const el of $$('[data-comando]')) el.disabled = !app.comando;
     const segnale = $('#segnale-richieste');
-    const n = eUfficiale() ? app.presenze.richieste.length : 0;
+    const n = app.capo ? app.presenze.richieste.length : 0;
     segnale.hidden = n === 0;
     segnale.textContent = String(n);
     emetti('comando', app.comando);

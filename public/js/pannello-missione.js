@@ -1,9 +1,12 @@
-// Pannello "Commando": comando e richieste, chi è collegato, salva e carica il file della missione,
-// azzera la mappa, registro degli ufficiali, come si usa, uscita.
+// Pannello "Commando": la sessione in cui si è, comando e richieste, chi è collegato, salva e carica il file della
+// missione, azzera la mappa, registro dei capi, come si usa, uscita.
+// I "capi" di una sessione sono gli ufficiali e chi l'ha creata: hanno sempre il comando e lo danno agli altri.
 import { app, invia, on, eUfficiale, NOMI_RUOLI } from './stato.js';
-import { $, crea, avviso, conferma } from './ui.js';
+import { $, $$, crea, avviso, conferma } from './ui.js';
 import { chiediComando } from './comando.js';
 import { disegni } from './disegno.js';
+import { puoChiudere } from './sessioni.js';
+import { apriScelta, chiudiSessione } from './scelta-sessione.js';
 
 const ora = (ms) => new Date(ms).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
@@ -12,23 +15,42 @@ function nomeDi(sid) {
 }
 
 function puoAzzerare() {
-    return eUfficiale() || (app.comando && !app.presenze.persone.some((p) => eUfficiale(p.ruolo)));
+    return app.capo || (app.comando && !app.presenze.persone.some((p) => p.capo));
+}
+
+// Chi dà il comando in questa sessione: «un ufficiale» o «Mario o un ufficiale».
+function chiDecide() {
+    const s = app.sessione;
+    return s?.principale || !s?.creatore ? 'un ufficiale' : `${s.creatore} o un ufficiale`;
+}
+
+function disegnaSessione() {
+    const s = app.sessione;
+    if (!s) return;
+    $('#sessione-nome').textContent = s.nome;
+    $('#sessione-info').textContent = s.principale
+        ? 'La sessione di tutti. Quando non c\'è più nessuno, dopo 10 minuti torna pulita.'
+        : `Aperta da ${s.creatore || 'qualcuno'}. Resta salvata e si cancella da sola dopo 5 giorni che nessuno la usa.`;
+    $('#chiudi-sessione').hidden = !puoChiudere(s, app.utente, eUfficiale());
+    $('#conta-sessioni').textContent = app.sessioni.length > 1 ? ` (${app.sessioni.length})` : '';
+    for (const el of $$('[data-capi]')) el.hidden = !app.capo;
 }
 
 function disegnaComando() {
-    const ufficiale = eUfficiale();
+    const capo = app.capo;
     let frase;
-    if (ufficiale) frase = 'Sei un ufficiale: hai sempre il comando e decidi chi altro può modificare la mappa.';
-    else if (app.comando) frase = 'Hai il comando: puoi modificare la mappa per tutti.';
-    else if (app.richiestaInviata) frase = 'Richiesta inviata: aspetta che un ufficiale ti dia il comando.';
-    else frase = 'Stai guardando: per modificare la mappa chiedi il comando a un ufficiale.';
+    if (capo && eUfficiale()) frase = 'Sei un ufficiale: hai sempre il comando e decidi chi altro può modificare la mappa.';
+    else if (capo) frase = 'Hai aperto tu questa sessione: hai sempre il comando e decidi chi altro può modificare la mappa.';
+    else if (app.comando) frase = 'Hai il comando: puoi modificare la mappa per tutti quelli della sessione.';
+    else if (app.richiestaInviata) frase = `Richiesta inviata: aspetta che ${chiDecide()} ti dia il comando.`;
+    else frase = `Stai guardando: per modificare la mappa chiedi il comando a ${chiDecide()}.`;
     $('#comando-frase').textContent = frase;
-    $('#chiedi-comando').hidden = ufficiale || app.comando || app.richiestaInviata;
-    $('#lascia-comando').hidden = ufficiale || !app.comando;
+    $('#chiedi-comando').hidden = capo || app.comando || app.richiestaInviata;
+    $('#lascia-comando').hidden = capo || !app.comando;
 
-    if (ufficiale) {
+    if (capo) {
         const richieste = app.presenze.richieste;
-        const conComando = app.presenze.persone.filter((p) => p.comando && !eUfficiale(p.ruolo));
+        const conComando = app.presenze.persone.filter((p) => p.comando && !p.capo);
         $('#richieste').replaceChildren(
             crea('h4', { class: 'etichetta richieste-titolo' }, 'Chiedono il comando'),
             richieste.length
@@ -43,7 +65,7 @@ function disegnaComando() {
                 ? crea('ul', { class: 'richieste-lista' }, ...conComando.map((p) => crea('li', { class: 'persona' },
                     crea('span', { class: 'persona-nome' }, p.nome),
                     crea('button', { type: 'button', class: 'pulsante piccolo pericolo', onclick: () => invia('comando:revoca', p.sid) }, 'Togli il comando'))))
-                : crea('p', { class: 'aiuto' }, 'Oltre agli ufficiali, nessuno.'),
+                : crea('p', { class: 'aiuto' }, app.sessione?.principale ? 'Oltre agli ufficiali, nessuno.' : 'Oltre a chi ha aperto la sessione e agli ufficiali, nessuno.'),
         );
     }
     $('#gruppo-azzera').hidden = !puoAzzerare();
@@ -61,11 +83,13 @@ function disegnaCollegati() {
             persone.set(p.id, { ...p, volte: 1 });
         }
     }
-    const ordinate = [...persone.values()].sort((a, b) => Number(eUfficiale(b.ruolo)) - Number(eUfficiale(a.ruolo)) || a.nome.localeCompare(b.nome));
+    const ordinate = [...persone.values()].sort((a, b) => Number(b.capo) - Number(a.capo) || a.nome.localeCompare(b.nome));
+    const creatore = app.sessione?.creatoreId;
     $('#collegati').replaceChildren(...ordinate.map((p) => crea('li', { class: 'persona' },
         crea('span', { class: 'persona-nome' }, p.nome, p.id === app.utente.id ? ' (tu)' : '', p.volte > 1 ? ` ×${p.volte}` : ''),
         crea('span', { class: `cartellino${eUfficiale(p.ruolo) ? ' oro' : ''}` }, NOMI_RUOLI[p.ruolo] || p.ruolo),
-        p.comando && !eUfficiale(p.ruolo) ? crea('span', { class: 'cartellino oro' }, 'Comando') : null)));
+        p.id === creatore ? crea('span', { class: 'cartellino oro' }, 'Ha aperto la sessione') : null,
+        p.comando && !p.capo ? crea('span', { class: 'cartellino oro' }, 'Comando') : null)));
     $('#conta-collegati').textContent = `(${persone.size})`;
 }
 
@@ -119,9 +143,11 @@ export function avviaPannelloMissione() {
         e.target.value = '';
     });
     $('#azzera-mappa').addEventListener('click', async () => {
-        const ok = await conferma({ titolo: 'Azzerare la mappa?', testo: 'Tutte le icone e tutti i disegni spariscono per tutti. Mappa e bounty restano. Salva prima la missione se ti serve.', si: 'Azzera', pericolo: true });
+        const ok = await conferma({ titolo: 'Azzerare la mappa?', testo: 'Tutte le icone e tutti i disegni di questa sessione spariscono per tutti. La mappa resta. Salva prima la missione se ti serve.', si: 'Azzera', pericolo: true });
         if (ok) invia('missione:azzera');
     });
+    $('#cambia-sessione').addEventListener('click', () => apriScelta());
+    $('#chiudi-sessione').addEventListener('click', () => chiudiSessione(app.sessione));
     if (app.dentroIlSito) $('#esci').hidden = true;
 
     on('utente', () => {
@@ -140,6 +166,11 @@ export function avviaPannelloMissione() {
         disegnaCollegati();
     });
     on('comando', disegnaComando);
+    on('sessione', () => {
+        disegnaSessione();
+        disegnaComando();
+    });
+    on('sessioni', disegnaSessione);
     on('pannello:aperto', (nome) => {
         if (nome !== 'missione') return;
         const lista = $('#registro');

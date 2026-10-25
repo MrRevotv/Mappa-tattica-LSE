@@ -79,12 +79,16 @@ const paginaAccessoLseNegato = `<!doctype html><html lang="it"><meta charset="ut
 <p>Accesso dal sito LSE non riuscito: ricarica la pagina.</p>
 <script src="/js/accesso-negato.js"></script>`;
 
+// Dove si torna dopo l'ingresso o l'uscita: la mappa, o un altro strumento (?vai=bounty).
+const DESTINAZIONI = { mappa: '/', bounty: '/bounty' };
+const destinazione = (vai) => (Object.hasOwn(DESTINAZIONI, vai) ? DESTINAZIONI[vai] : '/');
+
 // Apre la sessione nuova (mai riusare quella di prima) con chi è entrato.
-function entra(req, res, utente) {
+function entra(req, res, utente, verso = '/') {
     req.session.regenerate((err) => {
-        if (err) return res.redirect('/?accesso=errore');
+        if (err) return res.redirect(`${verso}?accesso=errore`);
         req.session.utente = utente;
-        req.session.save(() => res.redirect('/'));
+        req.session.save(() => res.redirect(verso));
     });
 }
 
@@ -98,9 +102,11 @@ function montaAccesso(app) {
     if (!discordAttivo) console.warn('[ACCESSO] CLIENT_ID, CLIENT_SECRET o CALLBACK_URL mancanti: il login con Discord è spento.');
 
     app.get('/auth/discord', (req, res) => {
-        if (!discordAttivo) return res.redirect('/?accesso=spento');
+        const verso = destinazione(req.query.vai);
+        if (!discordAttivo) return res.redirect(`${verso}?accesso=spento`);
         const stato = crypto.randomBytes(16).toString('base64url');
         req.session.statoDiscord = stato;
+        req.session.versoDiscord = verso;
         const url = new URL('https://discord.com/oauth2/authorize');
         url.search = new URLSearchParams({
             client_id: discord.clientId,
@@ -116,8 +122,10 @@ function montaAccesso(app) {
     app.get('/auth/discord/callback', async (req, res) => {
         const { code, state } = req.query;
         const atteso = req.session.statoDiscord;
+        const verso = Object.values(DESTINAZIONI).includes(req.session.versoDiscord) ? req.session.versoDiscord : '/';
         delete req.session.statoDiscord;
-        if (typeof code !== 'string' || typeof state !== 'string' || !atteso || state !== atteso) return res.redirect('/?accesso=annullato');
+        delete req.session.versoDiscord;
+        if (typeof code !== 'string' || typeof state !== 'string' || !atteso || state !== atteso) return res.redirect(`${verso}?accesso=annullato`);
         try {
             const token = await jsonDiscord(await fetch(`${API_DISCORD}/oauth2/token`, {
                 method: 'POST',
@@ -133,16 +141,16 @@ function montaAccesso(app) {
             const intestazioni = { Authorization: `Bearer ${token.access_token}` };
             const io = await jsonDiscord(await fetch(`${API_DISCORD}/users/@me`, { headers: intestazioni }));
             const risposta = await fetch(`${API_DISCORD}/users/@me/guilds/${discord.guild}/member`, { headers: intestazioni });
-            if (risposta.status === 404) return res.redirect('/?accesso=fuori');
+            if (risposta.status === 404) return res.redirect(`${verso}?accesso=fuori`);
             const membro = await jsonDiscord(risposta);
             entra(req, res, {
                 id: io.id,
                 nome: membro.nick || io.global_name || io.username,
                 ruolo: ruoloDa(io.id, membro.roles || []),
-            });
+            }, verso);
         } catch (e) {
             console.error('[ACCESSO] Login con Discord non riuscito:', e.message);
-            res.redirect('/?accesso=errore');
+            res.redirect(`${verso}?accesso=errore`);
         }
     });
 
@@ -152,7 +160,7 @@ function montaAccesso(app) {
         }
         const dati = leggiBigliettoLse(req.query.t);
         if (!dati) return res.status(403).type('html').send(paginaAccessoLseNegato);
-        entra(req, res, { id: dati.id, nome: dati.nome, ruolo: ruoloDa(dati.id, dati.ruoli) });
+        entra(req, res, { id: dati.id, nome: dati.nome, ruolo: ruoloDa(dati.id, dati.ruoli) }, destinazione(req.query.vai));
     });
 
     app.get('/api/me', (req, res) => {
@@ -162,7 +170,7 @@ function montaAccesso(app) {
     });
 
     app.get('/logout', (req, res) => {
-        req.session.destroy(() => res.redirect('/'));
+        req.session.destroy(() => res.redirect(destinazione(req.query.vai)));
     });
 }
 

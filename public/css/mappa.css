@@ -191,6 +191,8 @@ button { cursor: pointer; }
 }
 
 .pulsante-icona:hover:not(:disabled) { border-color: var(--oro); color: var(--oro); }
+.pulsante-icona.pericolo { color: var(--errore); border-color: #7a4a42; }
+.pulsante-icona.pericolo:hover:not(:disabled) { color: var(--errore); border-color: var(--errore); }
 
 button:disabled, .pulsante[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
 
@@ -410,6 +412,7 @@ select option { background: var(--twill-scuro); color: var(--filo); }
     font-stretch: 125%;
     letter-spacing: 0.06em;
     line-height: 1;
+    text-decoration: none;
     text-transform: uppercase;
     transition: color 0.15s, background-color 0.15s;
 }
@@ -712,8 +715,6 @@ select option { background: var(--twill-scuro); color: var(--filo); }
     animation: entra-lato 0.22s var(--filo-easing);
 }
 
-/* Il pannello largo (Bounty) lascia sempre una striscia di mappa a destra. */
-.pannello.largo { width: min(62rem, calc(100vw - var(--binario) - 15rem)); }
 .pannello:focus { outline: none; }
 
 .pannello-testa {
@@ -757,7 +758,6 @@ body.sola-visione .nota-comando {
     line-height: 1.4;
 }
 
-body.sola-visione [data-solo-comando] { display: none !important; }
 
 .mappa-attuale { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.375rem 0.625rem; margin: 0.25rem 0 0; }
 .mappa-attuale #mappa-attuale { color: var(--filo); font-weight: 600; }
@@ -869,7 +869,6 @@ body.sola-visione [data-solo-comando] { display: none !important; }
 .riga .quota { color: var(--oro); font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; overflow-wrap: anywhere; }
 .riga .pulsante-icona { width: 2.5rem; height: 2.5rem; border-color: transparent; background: none; color: var(--filo-tenue); }
 .riga .pulsante-icona:hover { color: var(--errore); border-color: transparent; }
-body.sola-visione .tabella-testa, body.sola-visione .riga { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1.25fr); }
 .tabella .vuoto { padding: 0.625rem 0.75rem; }
 
 .conti { margin: 0 0 1rem; }
@@ -931,6 +930,154 @@ body.sola-visione .tabella-testa, body.sola-visione .riga { grid-template-column
 .comandi dt { font-weight: 700; font-size: 0.875rem; }
 .comandi dd { margin: 0.125rem 0 0; color: var(--filo-tenue); font-size: 0.875rem; }
 #account-frase { margin-bottom: 0.75rem; }
+
+/* Sessioni (mappa e bounty) */
+.sessione-nome { margin: 0 0 0.25rem; font-size: 1.0625rem; font-weight: 700; overflow-wrap: anywhere; }
+#sessione-info { margin-bottom: 0.75rem; }
+.elenco-sessioni { display: flex; flex-direction: column; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+
+.sessione-voce {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.625rem 0.625rem 0.625rem 0.875rem;
+    background: rgb(13 12 11 / 0.6);
+    border: 2px dashed var(--twill-chiaro);
+}
+
+.sessione-voce.attuale { border-style: solid; border-color: var(--oro); }
+.sessione-testi { flex: 1; min-width: min(12rem, 100%); }
+.sessione-titolo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 0.5rem; margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.sessione-dettagli { margin: 0.125rem 0 0; color: var(--filo-tenue); font-size: 0.8125rem; line-height: 1.4; }
+.sessione-dettagli > span + span::before { content: " · "; }
+.sessione-dettagli .dentro { color: var(--ok); }
+.sessione-voce .azioni-riga { gap: 0.375rem; }
+
+.dialogo.dialogo-sessioni { width: min(36rem, calc(100vw - 2rem)); }
+.dialogo-corpo { padding: 1.25rem; }
+.dialogo-sessioni .elenco-sessioni { max-height: min(55dvh, 30rem); overflow-y: auto; overscroll-behavior: contain; }
+.dialogo-sessioni .dialogo-azioni { justify-content: space-between; }
+
+/* ---------- Pagina del bounty ---------- */
+/* Un po' più grande della mappa: qui si leggono e si scrivono conti. */
+html.pagina-bounty { --binario: 0px; --barra-basso: 0px; font-size: 112.5%; }
+@media (min-width: 1700px) { html.pagina-bounty { font-size: 118.75%; } }
+@media (min-width: 2200px) { html.pagina-bounty { font-size: 131.25%; } }
+@media (max-width: 47.99rem) { html.pagina-bounty { font-size: 106.25%; } }
+
+.pagina { position: fixed; inset: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+
+.pagina-testa {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: calc(0.75rem + env(safe-area-inset-top)) calc(1.5rem + env(safe-area-inset-right)) 0.75rem calc(1.5rem + env(safe-area-inset-left));
+    background: var(--twill-scuro);
+    border-bottom: 2px dashed var(--twill-chiaro);
+}
+
+.pagina-testa img { width: 2.5rem; height: 2.5rem; flex: none; }
+.pagina-testa h1 { flex: 1; min-width: 0; margin: 0; color: var(--oro); font-size: 1.25rem; }
+.pagina-utente { color: var(--filo-tenue); font-size: 0.875rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pagina-corpo {
+    max-width: 76rem;
+    margin: 0 auto;
+    padding: 2rem calc(1.5rem + env(safe-area-inset-right)) calc(3rem + env(safe-area-inset-bottom)) calc(1.5rem + env(safe-area-inset-left));
+}
+
+/* I testi più piccoli, qui un po' più grandi. */
+.pagina .etichetta, .pagina .tabella-testa span { font-size: 0.75rem; }
+.pagina .aiuto { font-size: 0.9375rem; }
+.pagina .pulsante.piccolo { font-size: 0.875rem; }
+.pagina .campo > label { font-size: 0.875rem; }
+
+/* Elenco delle sessioni: una scheda per sessione */
+.elenco-testa { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; margin-bottom: 0.75rem; }
+.elenco-testa h2 { flex: 1 1 auto; margin: 0; font-size: 1.5rem; }
+#vista-elenco > .aiuto { max-width: 46rem; margin-bottom: 1.5rem; }
+.pagina .elenco-sessioni { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(19rem, 100%), 1fr)); gap: 1rem; }
+.pagina .sessione-voce { flex-direction: column; align-items: stretch; gap: 1.125rem; padding: 1.125rem 1.25rem 1.25rem; transition: border-color 0.15s; }
+.pagina .sessione-voce:hover { border-color: var(--bordo); }
+.pagina .sessione-testi { min-width: 0; }
+.pagina .sessione-titolo { font-size: 1.1875rem; }
+.pagina .sessione-dettagli { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.5rem; font-size: 0.875rem; }
+.pagina .sessione-dettagli > span + span::before { content: none; }
+.pagina .sessione-dettagli .dentro::before {
+    content: "";
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin: 0 0.5rem 0.1em 0;
+    background: var(--ok);
+    border-radius: 50%;
+}
+.pagina .sessione-voce .azioni-riga { margin-top: auto; }
+.pagina .sessione-voce .targhetta { flex: 1; }
+
+/* Sessione aperta */
+.sessione-testa {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0.5rem 1.5rem;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px dashed var(--twill-chiaro);
+}
+
+.torna {
+    grid-column: 1 / -1;
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-height: 2.5rem;
+    margin-left: -0.25rem;
+    padding: 0 0.5rem 0 0.25rem;
+    background: none;
+    color: var(--filo-tenue);
+    border: 0;
+    font-size: 0.875rem;
+    font-weight: 700;
+    transition: color 0.15s;
+}
+
+.torna:hover { color: var(--oro); }
+.sessione-titoli h2 { margin: 0 0 0.375rem; font-size: 1.75rem; overflow-wrap: anywhere; }
+.sessione-info { margin: 0; color: var(--filo-tenue); font-size: 0.9375rem; }
+.presenti { display: flex; flex-wrap: wrap; gap: 0.375rem; margin: 0.5rem 0 0; padding: 0; list-style: none; }
+
+.presenti li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4375rem;
+    padding: 0.25rem 0.625rem;
+    background: rgb(143 217 168 / 0.07);
+    border: 1px solid rgb(143 217 168 / 0.35);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.presenti li::before { content: ""; width: 0.5rem; height: 0.5rem; flex: none; background: var(--ok); border-radius: 50%; }
+.presenti .tu { color: var(--filo-tenue); font-weight: 400; }
+.sessione-azioni { justify-content: flex-end; }
+
+/* Il calcolatore nella sua pagina */
+.pagina .bounty { gap: 0 2.5rem; }
+.pagina .bounty .gruppo > h3.etichetta { color: var(--oro); font-size: 0.8125rem; }
+.pagina .riga input { min-height: 2.75rem; }
+.pagina .riga .quota { font-size: 1.0625rem; }
+/* Nei pagamenti il Δ % è corto: più spazio alla quota, che così sta su una riga anche sul telefono. */
+.pagina #bounty-pagamenti .tabella-testa, .pagina #bounty-pagamenti .riga { grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.7fr) minmax(0, 1.45fr) 2.5rem; }
+.pagina .bounty-conti { top: 5.25rem; }
+.pagina .bounty-colonna > .riepilogo { padding: 1.25rem 1.375rem; background: var(--twill-scuro); border: 2px solid var(--twill-chiaro); }
+.pagina .conti > div { padding: 0.5625rem 0; }
+.pagina .conti .conti-totale dt, .pagina .conti .conti-totale dd { font-size: 1.25rem; }
 
 /* ---------- Scheda dell'icona ---------- */
 .scheda {
@@ -1037,8 +1184,18 @@ body.sola-visione .tabella-testa, body.sola-visione .riga { grid-template-column
         animation-name: entra-basso;
     }
 
-    .pannello.largo { width: auto; max-height: calc(100dvh - var(--barra-basso) - 5rem); }
     .pannello-corpo { padding: 0.875rem 1rem 1.5rem; }
+
+    .pagina-testa { padding-right: calc(1rem + env(safe-area-inset-right)); padding-left: calc(1rem + env(safe-area-inset-left)); }
+    .pagina-testa h1 { font-size: 0.9375rem; }
+    .pagina .riga .quota { font-size: 0.9375rem; }
+    .pagina .conti .conti-totale dt, .pagina .conti .conti-totale dd { font-size: 1.0625rem; }
+    .pagina .griglia-campi { grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); }
+    .pagina-utente { display: none; }
+    .pagina-corpo { padding: 1.25rem calc(1rem + env(safe-area-inset-right)) calc(2rem + env(safe-area-inset-bottom)) calc(1rem + env(safe-area-inset-left)); }
+    .sessione-testa { grid-template-columns: minmax(0, 1fr); }
+    .sessione-titoli h2 { font-size: 1.375rem; }
+    .sessione-azioni { justify-content: flex-start; }
 
     .scheda {
         top: auto;

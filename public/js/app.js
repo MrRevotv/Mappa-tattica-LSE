@@ -12,12 +12,17 @@ import { avviaGoniometro } from './goniometro.js';
 import { avviaPannelloMappa } from './pannello-mappa.js';
 import { avviaPannelloSchiera } from './pannello-schiera.js';
 import { avviaPannelloSquadre } from './pannello-squadre.js';
-import { avviaPannelloBounty } from './pannello-bounty.js';
 import { avviaPannelloMissione } from './pannello-missione.js';
+import { avviaSceltaSessione, entraAllInizio, ricordaSessione } from './scelta-sessione.js';
 
 // Dentro il sito LSE (Area membri → Strumenti) la mappa sta in una pagina del sito: le dice se si è aperta
 // ("pronta") o se qui dentro non ha l'accesso ("serve-accesso"), così il sito può proporre una scheda nuova.
+let prontaDetta = false;
 function avvisaSitoLse(stato) {
+    if (stato === 'pronta') {
+        if (prontaDetta) return;
+        prontaDetta = true;
+    }
     if (app.dentroIlSito) window.parent.postMessage({ tipo: 'lse-strumento', stato }, '*');
 }
 
@@ -52,25 +57,50 @@ function collega() {
     app.socket = socket;
     let primaVolta = true;
 
-    socket.on('benvenuto', ({ utente, comando, stato, catalogo, registro }) => {
+    // Appena collegati arriva l'elenco delle sessioni: si entra in una (o si sceglie), poi arriva il "benvenuto".
+    socket.on('ciao', ({ utente, sessioni }) => {
         app.utente = utente;
-        app.comando = comando;
-        app.catalogo = catalogo;
+        app.sessioni = sessioni;
         emetti('utente');
+        emetti('sessioni');
+        if (!entraAllInizio()) {
+            $('#avvio').hidden = true;
+            avvisaSitoLse('pronta');
+        }
+    });
+
+    socket.on('benvenuto', ({ sessione, comando, capo, stato, catalogo, registro }) => {
+        const cambiata = app.sessione && app.sessione.id !== sessione.id;
+        app.sessione = sessione;
+        app.capo = capo;
+        app.comando = comando;
+        app.richiestaInviata = false;
+        app.catalogo = catalogo;
         applicaStato(stato);
+        emetti('sessione');
         emetti('catalogo');
         emetti('registro:tutto', registro);
         aggiornaComando();
         aggiornaTrascinabili();
+        ricordaSessione(sessione);
         if (primaVolta) {
             primaVolta = false;
             $('#avvio').hidden = true;
             mostraNovita();
             avvisaSitoLse('pronta');
+        } else if (cambiata) {
+            avviso(`Sei nella sessione «${sessione.nome}».`, { tipo: 'ok', durata: 3000 });
         } else {
             avviso('Di nuovo collegato.', { tipo: 'ok', durata: 2500 });
         }
     });
+
+    socket.on('sessioni', (sessioni) => {
+        app.sessioni = sessioni;
+        app.sessione = sessioni.find((s) => s.id === app.sessione?.id) || app.sessione;
+        emetti('sessioni');
+    });
+    socket.on('sessione:sparita', () => emetti('sessione:sparita'));
 
     socket.on('serve-accesso', () => location.reload());
     socket.on('disconnect', (motivo) => {
@@ -123,10 +153,6 @@ function collega() {
         impostaSfondo(url, bounds);
         emetti('mappa:cambiata');
     });
-    socket.on('bounty', (dati) => {
-        app.stato.bounty = dati;
-        emetti('bounty', dati);
-    });
     socket.on('ping', ({ lat, lng, id, nome, ruolo }) => mostraPing(lat, lng, { ruolo, nome, chiave: id }));
 }
 
@@ -169,8 +195,8 @@ async function avvia() {
     avviaPannelloMappa();
     avviaPannelloSchiera();
     avviaPannelloSquadre();
-    avviaPannelloBounty();
     avviaPannelloMissione();
+    avviaSceltaSessione();
     on('utente', () => document.body.classList.toggle('ufficiale', ['admin', 'responsabile'].includes(app.utente.ruolo)));
     collega();
 }

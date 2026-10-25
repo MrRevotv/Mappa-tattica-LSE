@@ -142,11 +142,11 @@ function statoPulito() {
         disegni: null,
         grigliaAttiva: false,
         zonaOperativa: normalizzaZona(null),
-        bounty: bountyVuoto(),
     };
 }
 
-// Uno stato intero: da un file missione (anche della mappa di prima) o dal pulsante "Carica missione".
+// Uno stato intero: da un file missione (anche della mappa di prima), dal pulsante "Carica missione" o da una sessione
+// salvata sul disco. Il bounty che c'è nei file della mappa di prima qui si ignora: ora sta nel suo tool.
 function normalizzaStato(s) {
     if (!s || typeof s !== 'object') return null;
     const stato = statoPulito();
@@ -164,8 +164,18 @@ function normalizzaStato(s) {
     stato.disegni = normalizzaDisegni(s.disegni);
     stato.grigliaAttiva = s.grigliaAttiva === true;
     stato.zonaOperativa = normalizzaZona(s.zonaOperativa);
-    stato.bounty = normalizzaBounty(s.bounty);
     return stato;
+}
+
+// Il nome di una sessione (mappa o bounty): una riga sola, senza spazi in più.
+function normalizzaNome(v) {
+    return typeof v === 'string' ? v.replace(/\s+/g, ' ').trim().slice(0, 60) : '';
+}
+
+// Chi ha creato una sessione, come lo si salva sul disco.
+function normalizzaCreatore(c) {
+    if (!c || typeof c.id !== 'string' || !c.id) return null;
+    return { id: testo(c.id, 40), nome: testo(c.nome, 80) || 'Qualcuno' };
 }
 
 module.exports = {
@@ -175,6 +185,8 @@ module.exports = {
     normalizzaBounty,
     normalizzaZona,
     normalizzaStato,
+    normalizzaNome,
+    normalizzaCreatore,
     statoPulito,
     sfondoValido,
     limitiValidi,

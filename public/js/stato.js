@@ -1,8 +1,11 @@
-// Lo stato condiviso del browser: chi sono, se ho il comando, lo stato della mappa ricevuto dal server.
+// Lo stato condiviso del browser: chi sono, in che sessione sono, se ho il comando, lo stato della mappa ricevuto dal server.
 // I moduli si parlano con piccoli eventi (on / emetti) invece di chiamarsi a vicenda.
 
 export const app = {
     utente: null,
+    sessione: null, // la sessione in cui sono (come nell'elenco)
+    sessioni: [],
+    capo: false, // ufficiale o creatore della sessione: comando sempre, decide chi altro lo ha
     comando: false,
     richiestaInviata: false,
     stato: null,
