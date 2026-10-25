@@ -111,7 +111,8 @@ in `/home/ubuntu/mappatattica-vecchia-25-ottobre`.
 
 ## Il Bounty dentro il sito LSE
 
-Il tool Bounty usa lo stesso accesso della mappa. Per metterlo anche nel sito (Area membri → Strumenti) basta una voce
-nuova che apre lo stesso indirizzo della mappa con in più `&vai=bounty`, cioè `/auth/lse?t=<biglietto>&vai=bounty`:
-dopo l'ingresso si arriva su `/bounty` invece che sulla mappa. Dal login con Discord vale lo stesso:
+Il tool Bounty usa lo stesso accesso della mappa e nel sito ha la sua voce: Area membri → «Bounty e salvage»
+(`/area-membri/strumenti/bounty/`, aggiunta il 25 ottobre 2026 in `src/content/strumenti-membri.ts` del sito). Il sito
+apre lo stesso indirizzo della mappa con in più `vai=bounty`, cioè `/auth/lse?vai=bounty&t=<biglietto>`: dopo
+l'ingresso si arriva su `/bounty` invece che sulla mappa. Dal login con Discord vale lo stesso:
 `/auth/discord?vai=bounty`.
