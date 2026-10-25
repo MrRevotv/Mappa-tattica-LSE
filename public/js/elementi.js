@@ -8,6 +8,7 @@ import { srcIcona, coloreNome, coloreFazione, percorsoFazione, nomeIcona } from 
 const segni = new Map(); // id → { marker, cerchio }
 const selezione = new Set();
 let modoSelezione = false;
+let ultimoPuntatore = 'mouse'; // su Android la pressione lunga col dito fa scattare anche il "clic destro"
 
 const lato = () => (eTelefono() ? 50 : 60);
 
@@ -140,6 +141,7 @@ function collegaEventi(id, marker) {
 
     marker.on('contextmenu', (ev) => {
         ev.originalEvent?.preventDefault();
+        if (ultimoPuntatore !== 'mouse') return;
         const e = trovaElemento(id);
         if (e && app.comando) modifica(id, { cerchioAttivo: !e.cerchioAttivo });
     });
@@ -357,6 +359,7 @@ export function aggiornaTrascinabili() {
 }
 
 export function avviaElementi() {
+    $('#mappa').addEventListener('pointerdown', (e) => { ultimoPuntatore = e.pointerType; }, true);
     $('#elimina-selezione').addEventListener('click', async () => {
         if (await eliminaConConferma([...selezione])) svuotaSelezione();
     });
