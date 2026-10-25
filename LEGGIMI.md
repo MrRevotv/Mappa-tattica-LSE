@@ -20,13 +20,14 @@ Puoi mettere questa versione al posto della vecchia senza toccare il sito né Di
 
 ## Cosa è cambiato
 
-- **Interfaccia pulita**: un pannello alla volta (Mappa, Schiera, Disegna, Squadre, Bounty, Missione). Sul telefono gli
+- **Interfaccia pulita**: un pannello alla volta (Mappa, Schiera, Disegna, Squadre, Bounty, Commando). Sul telefono gli
   strumenti stanno in una barra in basso e i pannelli salgono dal basso, lasciando vedere la mappa.
 - **Scheda dell'icona**: toccando un'icona si apre una scheda con nome, fazione, colore, cerchio tattico (con il
   raggio regolabile), squadra, orbita ed elimina. Prima l'eliminazione singola non c'era e il cerchio e la selezione
   multipla funzionavano solo col mouse: ora anche col dito («Seleziona altre icone»).
-- **Si vede sempre chi ha il comando** (riquadro in alto a destra) e chi può solo guardare ha i comandi bloccati con la
-  spiegazione e il pulsante «Chiedi il comando». Gli ufficiali sentono un suono e vedono le richieste.
+- **Pannello «Commando»** (con due m, in onore del film): chi ha il comando, chi è collegato, salva/carica missione,
+  azzera e registro. Chi può solo guardare ha i comandi bloccati con la spiegazione e il pulsante «Chiedi il comando».
+  Gli ufficiali sentono un suono e vedono le richieste (col numero sul pulsante «Commando»).
 - **Mappe con le proporzioni giuste**: prima ogni immagine veniva stirata in 16:9; ora la mappa ha la sua forma e la
   griglia si adatta (le missioni vecchie si aprono come prima, per non spostare le icone).
 - **Elenco delle mappe letto dalle cartelle**: basta copiare una cartella con WinSCP perché compaia, anche per
@@ -55,17 +56,32 @@ npm start
 Le impostazioni vanno in un file `.env` (vedi `.env.example`). Senza `CLIENT_ID` e `CLIENT_SECRET` la mappa parte lo
 stesso, ma il login con Discord è spento (si entra solo dal sito con `LSE_SEGRETO`).
 
-## Metterla online al posto della vecchia (VPS)
+## Aggiornarla sulla VPS
 
-Il container `mappatattica` della VPS (`/home/ubuntu/container/mappatattica`) va bene così com'è: usa Node 24 e lancia
-`node server.js`.
+Dal 25 ottobre 2026 questa versione è online su https://mappatattica.lse.sc al posto della vecchia. Gira nella cartella
+`/home/ubuntu/container/mappatattica` della VPS, con il container `mappatattica` (Node 24, lancia `node server.js`).
 
-1. Con WinSCP, nella cartella `mappatattica` della VPS **tieni** `.env` e `public/mappe`; sposta il resto in una
-   cartella di riserva (così torni indietro in un attimo).
-2. Carica i file di questa cartella **tranne** `node_modules`, `.env` e `public/mappe`.
-3. Crea un file vuoto chiamato `update`: entro 15 minuti la VPS reinstalla i pacchetti e riaccende la mappa.
+In quella cartella ci sono file che **non** fanno parte della mappa ma della VPS, e vanno sempre lasciati dove sono:
 
-Per tornare alla versione vecchia basta rimettere i file dalla cartella di riserva e creare di nuovo `update`.
+- `.env` (le impostazioni vere);
+- `compose.yaml` e `aggiorna.sh` (accendono e aggiornano il container: senza, la mappa non riparte);
+- `public/mappe` e il collegamento `public/Mappe` (le mappe caricate);
+- `uploads` (i caricamenti in corso).
+
+Per aggiornarla:
+
+1. Fai un backup: copia tutta la cartella `mappatattica` in `/home/ubuntu` con un nome tipo
+   `mappatattica-vecchia-GG-mese`. Mettila **fuori** da `container`, perché l'aggiornamento automatico guarda tutte le
+   cartelle lì dentro.
+2. Con WinSCP carica i file di questa cartella **tranne** `node_modules`, `.env` e `public/mappe`, sovrascrivendo
+   quelli che ci sono. Se un file è stato tolto da questa versione, cancellalo anche lì.
+3. Crea un file vuoto chiamato `update`: entro 15 minuti la VPS reinstalla i pacchetti se servono e riaccende la mappa.
+   Com'è andata lo scrive in `ultimo-aggiornamento.txt`. Se hai accesso con SSH puoi farlo subito: nella cartella
+   lancia `bash aggiorna.sh`.
+
+Per tornare indietro: rinomina `mappatattica` (per esempio in `mappatattica-nuova`), rimetti al suo posto la copia di
+backup e crea di nuovo `update` (oppure lancia `bash aggiorna.sh`). Il backup della mappa di prima del 25 ottobre è
+in `/home/ubuntu/mappatattica-vecchia-25-ottobre`.
 
 ## Com'è fatta
 

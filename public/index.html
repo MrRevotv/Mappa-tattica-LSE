@@ -60,7 +60,7 @@
             <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#coins"/></svg><span>Bounty</span>
         </button>
         <button type="button" class="binario-voce" data-pannello="missione" aria-controls="pannello" aria-expanded="false">
-            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#flag-banner"/></svg><span>Missione</span>
+            <svg class="ic" aria-hidden="true"><use href="icone-ui.svg#shield-star"/></svg><span>Commando</span>
             <span class="binario-segnale" id="segnale-richieste" hidden></span>
         </button>
     </nav>
@@ -214,8 +214,8 @@
                 </div>
             </div>
 
-            <!-- MISSIONE -->
-            <div class="vista" data-vista="missione" data-titolo="Missione" hidden>
+            <!-- COMMANDO (comando e file della missione) -->
+            <div class="vista" data-vista="missione" data-titolo="Commando" hidden>
                 <section class="gruppo" aria-labelledby="t-comando">
                     <h3 id="t-comando" class="etichetta">Comando</h3>
                     <p id="comando-frase" class="frase"></p>
@@ -283,8 +283,6 @@
     <div id="mappa" class="mappa" aria-label="Mappa tattica"></div>
 
     <!-- Sopra la mappa -->
-    <div class="stato-comando" id="stato-comando"></div>
-
     <div class="controlli-mappa" role="group" aria-label="Vista della mappa">
         <button type="button" class="pulsante-icona" id="zoom-piu" aria-label="Avvicina"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#plus"/></svg></button>
         <button type="button" class="pulsante-icona" id="zoom-meno" aria-label="Allontana"><svg class="ic" aria-hidden="true"><use href="icone-ui.svg#minus"/></svg></button>

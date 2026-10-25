@@ -1,4 +1,4 @@
-// Pannello "Missione": comando e richieste, chi è collegato, salva e carica il file della missione,
+// Pannello "Commando": comando e richieste, chi è collegato, salva e carica il file della missione,
 // azzera la mappa, registro degli ufficiali, come si usa, uscita.
 import { app, invia, on, eUfficiale, NOMI_RUOLI } from './stato.js';
 import { $, crea, avviso, conferma } from './ui.js';

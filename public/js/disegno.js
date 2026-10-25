@@ -17,6 +17,7 @@ const AIUTI = {
     matita: 'Disegna con il dito o il mouse. Fermati un attimo a fine tratto per avere un cerchio, un rettangolo o una freccia.',
     gomma: 'Passa sopra un disegno o un testo per cancellarlo.',
     testo: 'Tocca la mappa dove vuoi scrivere.',
+    nessuno: 'Nessuno strumento acceso: puoi spostare la mappa e i testi. Scegline uno per disegnare.',
 };
 const SOSTA_FORMA_MS = 600;
 
@@ -89,7 +90,7 @@ function scegliStrumento(nuovo) {
     c.classList.toggle('gomma', nuovo === 'gomma');
     c.classList.toggle('testo', nuovo === 'testo');
     for (const b of $('#barra-disegno').querySelectorAll('[data-strumento]')) b.setAttribute('aria-checked', String(b.dataset.strumento === nuovo));
-    $('#aiuto-disegno').textContent = AIUTI[nuovo] || '';
+    $('#aiuto-disegno').textContent = AIUTI[nuovo || 'nessuno'];
     if (nuovo) mappa.dragging.disable();
     else mappa.dragging.enable();
     aggiornaTrascinabiliTesti();
@@ -313,7 +314,8 @@ export function avviaDisegno() {
     }
     $('#barra-disegno').addEventListener('click', (ev) => {
         const b = ev.target.closest('[data-strumento]');
-        if (b) scegliStrumento(b.dataset.strumento);
+        // Ripremendo lo strumento già acceso lo si spegne (e la mappa torna a spostarsi).
+        if (b) scegliStrumento(b.dataset.strumento === strumento ? null : b.dataset.strumento);
     });
     $('#annulla-disegno').addEventListener('click', () => {
         const ultimi = disegni.getLayers();

@@ -41,7 +41,7 @@
     --ombra-finestra: 0 0.75rem 2rem rgb(0 0 0 / 0.5), 0 0.2rem 0.4rem rgb(0 0 0 / 0.45);
     --filo-easing: cubic-bezier(0.22, 1, 0.36, 1);
 
-    --binario: 4.5rem;
+    --binario: 6.25rem; /* largo abbastanza per «COMMANDO» */
     --barra-basso: 0px;
     --pannello: 23rem;
     --margine: 0.75rem;
@@ -459,7 +459,8 @@ select option { background: var(--twill-scuro); color: var(--filo); }
     }
 
     .binario-logo { display: none; }
-    .binario-voce { flex: 1; min-width: 0; min-height: 3.75rem; font-size: 0.5625rem; letter-spacing: 0.04em; }
+    /* Sul telefono le voci si dividono la larghezza: scritte più strette perché «COMMANDO» ci stia anche a 360 px. */
+    .binario-voce { flex: 1; min-width: 0; min-height: 3.75rem; padding: 0.25rem 0.125rem; font-size: 0.5625rem; font-stretch: 87.5%; letter-spacing: 0.02em; }
 
     .binario-voce[aria-expanded="true"]::before {
         top: 0;
@@ -609,45 +610,6 @@ select option { background: var(--twill-scuro); color: var(--filo); }
 .goniometro svg { display: block; transform: rotate(var(--angolo, 0deg)); transition: transform 0.08s linear; }
 
 /* ---------- Sopra la mappa ---------- */
-.stato-comando {
-    position: fixed;
-    top: calc(var(--margine) + env(safe-area-inset-top));
-    right: calc(var(--margine) + env(safe-area-inset-right));
-    z-index: 15;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    max-width: calc(100vw - var(--binario) - 2 * var(--margine));
-    padding: 0.25rem;
-    background: rgb(13 12 11 / 0.94);
-    border: 2px solid var(--bordo);
-    box-shadow: var(--ombra-toppa);
-}
-
-.stato-comando.ha-comando { border-color: var(--oro); }
-
-.stato-testo {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 2.5rem;
-    padding: 0 0.625rem;
-    background: none;
-    color: var(--filo-tenue);
-    border: 0;
-    font-size: 0.75rem;
-    font-weight: 800;
-    font-stretch: 125%;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.ha-comando .stato-testo { color: var(--oro); }
-.stato-testo:hover { color: var(--filo); }
-.stato-comando .targhetta { box-shadow: none; }
-.stato-comando .targhetta:hover { transform: none; }
-
 .controlli-mappa {
     position: fixed;
     right: calc(var(--margine) + env(safe-area-inset-right));
@@ -750,7 +712,7 @@ select option { background: var(--twill-scuro); color: var(--filo); }
     animation: entra-lato 0.22s var(--filo-easing);
 }
 
-/* Il pannello largo (Bounty) lascia sempre una striscia di mappa e il riquadro del comando a destra. */
+/* Il pannello largo (Bounty) lascia sempre una striscia di mappa a destra. */
 .pannello.largo { width: min(62rem, calc(100vw - var(--binario) - 15rem)); }
 .pannello:focus { outline: none; }
 
@@ -1090,8 +1052,6 @@ body.sola-visione .tabella-testa, body.sola-visione .riga { grid-template-column
         border-top-style: dashed;
         border-color: var(--twill-chiaro);
     }
-
-    .stato-testo { padding: 0 0.375rem; }
 
     .barra-disegno {
         top: auto;
